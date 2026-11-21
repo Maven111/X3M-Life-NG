@@ -1,0 +1,355 @@
+// ==============================================================================
+// X3M Ideas: Agency Life Simulation - Prisma Database Schema
+// PostgreSQL with pgvector for Semantic Search & Document Snapshots
+// ==============================================================================
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+  extensions = [pgvector(map: "vector")]
+}
+
+// -----------------------------------------------------------------------------
+// 1. Player & Profile (Identity decoupled from Employment)
+// -----------------------------------------------------------------------------
+
+model Player {
+  id              String         @id @default(uuid())
+  supabaseAuthId  String         @unique @map("supabase_auth_id")
+  email           String         @unique
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  profile         PlayerProfile?
+  employee        Employee?
+  wallet          Wallet?
+
+  @@map("players")
+}
+
+model PlayerProfile {
+  id          String   @id @default(uuid())
+  playerId    String   @unique @map("player_id")
+  player      Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  displayName String   @map("display_name")
+  gender      String   @default("unspecified")
+  skinTone    String   @default("default")     @map("skin_tone")
+  hairstyle   String   @default("default")
+  outfit      String   @default("business_casual")
+  avatarUrl   String?  @map("avatar_url")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("player_profiles")
+}
+
+// -----------------------------------------------------------------------------
+// 2. Organization & Employment (5 Career Tracks, BU1-BU3, Finance, HR)
+// -----------------------------------------------------------------------------
+
+enum DepartmentCode {
+  BU1
+  BU2
+  BU3
+  FINANCE
+  HR
+}
+
+enum CareerTrack {
+  COPYWRITING
+  ART_DIRECTION
+  BRAND_STRATEGY
+  DIGITAL_STRATEGY
+  BRAND_MANAGEMENT
+}
+
+enum EmploymentStatus {
+  PROBATION
+  ACTIVE
+  ON_LEAVE
+  WARNING_REVIEW
+  TERMINATED
+}
+
+model Department {
+  id          String         @id @default(uuid())
+  code        DepartmentCode @unique
+  name        String
+  description String
+  location3D  String?        @map("location_3d")
+  employees   Employee[]
+  briefs      Brief[]
+
+  @@map("departments")
+}
+
+model JobRole {
+  id           String      @id @default(uuid())
+  track        CareerTrack
+  title        String
+  level        Int         @default(1)
+  description  String
+  salaryBandId String      @map("salary_band_id")
+  salaryBand   SalaryBand  @relation(fields: [salaryBandId], references: [id])
+  employees    Employee[]
+
+  @@unique([track, level])
+  @@map("job_roles")
+}
+
+model SalaryBand {
+  id        String    @id @default(uuid())
+  minSalary Int       @map("min_salary")
+  maxSalary Int       @map("max_salary")
+  currency  String    @default("NGN")
+  roles     JobRole[]
+
+  @@map("salary_bands")
+}
+
+model Employee {
+  id               String           @id @default(uuid())
+  playerId         String           @unique @map("player_id")
+  player           Player           @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  departmentId     String           @map("department_id")
+  department       Department       @relation(fields: [departmentId], references: [id])
+  jobRoleId        String           @map("job_role_id")
+  jobRole          JobRole          @relation(fields: [jobRoleId], references: [id])
+  currentSalary    Int              @map("current_salary")
+  performanceScore Float            @default(70.0) @map("performance_score")
+  warningCount     Int              @default(0)    @map("warning_count")
+  status           EmploymentStatus @default(PROBATION)
+  hiredAt          DateTime         @default(now()) @map("hired_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+
+  careerHistories  CareerHistory[]
+  briefAssignments BriefAssignment[]
+  hrRecords        HRRecord[]
+
+  @@map("employees")
+}
+
+model CareerHistory {
+  id             String    @id @default(uuid())
+  employeeId     String    @map("employee_id")
+  employee       Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  roleTitle      String    @map("role_title")
+  departmentName String    @map("department_name")
+  salary         Int
+  promotedAt     DateTime  @default(now()) @map("promoted_at")
+  notes          String?
+
+  @@map("career_histories")
+}
+
+// -----------------------------------------------------------------------------
+// 3. Briefs, Submissions & AI Evaluations
+// -----------------------------------------------------------------------------
+
+enum BriefCategory {
+  GENERAL
+  ROLE_SPECIFIC
+}
+
+enum BriefFormat {
+  MULTIPLE_CHOICE
+  TRIVIA
+  SCENARIO_CHOICE
+  CREATIVE_EXERCISE
+  SUBJECTIVE_PROPOSAL
+}
+
+enum EvaluationMethod {
+  DETERMINISTIC
+  GEMINI_RUBRIC
+}
+
+enum BriefStatus {
+  ACTIVE
+  ARCHIVED
+  DRAFT
+}
+
+enum AssignmentStatus {
+  PENDING
+  IN_PROGRESS
+  SUBMITTED
+  EXPIRED
+  CANCELLED
+}
+
+model Brief {
+  id               String           @id @default(uuid())
+  title            String
+  description      String
+  category         BriefCategory
+  format           BriefFormat
+  evaluationMethod EvaluationMethod @map("evaluation_method")
+  careerTrack      CareerTrack?     @map("career_track")
+  departmentId     String?          @map("department_id")
+  department       Department?      @relation(fields: [departmentId], references: [id])
+  difficulty       Int              @default(1)
+  rewardAmount     Int              @map("reward_amount")
+  deadlineDuration Int              @map("deadline_duration")
+  rubricSnapshot   Json?            @map("rubric_snapshot")
+  correctAnswer    String?          @map("correct_answer")
+  version          Int              @default(1)
+  status           BriefStatus      @default(ACTIVE)
+  createdAt        DateTime         @default(now()) @map("created_at")
+
+  assignments      BriefAssignment[]
+
+  @@map("briefs")
+}
+
+model BriefAssignment {
+  id           String           @id @default(uuid())
+  briefId      String           @map("brief_id")
+  brief        Brief            @relation(fields: [briefId], references: [id])
+  employeeId   String           @map("employee_id")
+  employee     Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  assignedAt   DateTime         @default(now()) @map("assigned_at")
+  dueAt        DateTime         @map("due_at")
+  status       AssignmentStatus @default(PENDING)
+
+  submission   BriefSubmission?
+
+  @@map("brief_assignments")
+}
+
+model BriefSubmission {
+  id           String          @id @default(uuid())
+  assignmentId String          @unique @map("assignment_id")
+  assignment   BriefAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  content      String
+  submittedAt  DateTime        @default(now()) @map("submitted_at")
+
+  evaluation   Evaluation?
+
+  @@map("brief_submissions")
+}
+
+model Evaluation {
+  id             String          @id @default(uuid())
+  submissionId   String          @unique @map("submission_id")
+  submission     BriefSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  score          Int
+  summary        String
+  strengths      String?
+  improvements   String?
+  evaluatedBy    String          @map("evaluated_by")
+  evaluatedAt    DateTime        @default(now()) @map("evaluated_at")
+  rawAiResponse  Json?           @map("raw_ai_response")
+
+  @@map("evaluations")
+}
+
+// -----------------------------------------------------------------------------
+// 4. Virtual Economy, Wallet & Marketplace
+// -----------------------------------------------------------------------------
+
+enum TransactionType {
+  SALARY
+  BRIEF_REWARD
+  BONUS
+  MARKETPLACE_PURCHASE
+  RECURRING_EXPENSE
+  ADJUSTMENT
+}
+
+model Wallet {
+  id             String        @id @default(uuid())
+  playerId       String        @unique @map("player_id")
+  player         Player        @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  balance        Int           @default(50000)
+  currency       String        @default("NGN")
+  totalEarnings  Int           @default(50000) @map("total_earnings")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  transactions   Transaction[]
+  inventory      InventoryItem[]
+
+  @@map("wallets")
+}
+
+model Transaction {
+  id           String          @id @default(uuid())
+  walletId     String          @map("wallet_id")
+  wallet       Wallet          @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  amount       Int
+  balanceAfter Int             @map("balance_after")
+  type         TransactionType
+  description  String
+  referenceId  String?         @map("reference_id")
+  createdAt    DateTime        @default(now()) @map("created_at")
+
+  @@map("transactions")
+}
+
+model LifestyleItem {
+  id          String          @id @default(uuid())
+  name        String
+  category    String
+  price       Int
+  prestige    Int             @default(10)
+  imageUrl    String?         @map("image_url")
+  modelUrl    String?         @map("model_url")
+  isAvailable Boolean         @default(true)  @map("is_available")
+
+  inventory   InventoryItem[]
+
+  @@map("lifestyle_items")
+}
+
+model InventoryItem {
+  id         String        @id @default(uuid())
+  walletId   String        @map("wallet_id")
+  wallet     Wallet        @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  itemId     String        @map("item_id")
+  item       LifestyleItem @relation(fields: [itemId], references: [id])
+  acquiredAt DateTime      @default(now()) @map("acquired_at")
+
+  @@map("inventory_items")
+}
+
+// -----------------------------------------------------------------------------
+// 5. HR, Disciplinary & Game Clock
+// -----------------------------------------------------------------------------
+
+enum HRActionType {
+  QUERY
+  WARNING
+  SUSPENSION
+  COMMENDATION
+}
+
+model HRRecord {
+  id          String       @id @default(uuid())
+  employeeId  String       @map("employee_id")
+  employee    Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  type        HRActionType
+  reason      String
+  issuedAt    DateTime     @default(now()) @map("issued_at")
+  resolvedAt  DateTime?    @map("resolved_at")
+  isResolved  Boolean      @default(false) @map("is_resolved")
+
+  @@map("hr_records")
+}
+
+model GameClockState {
+  id                     String   @id @default("singleton")
+  baselineRealTime       DateTime @default(now()) @map("baseline_real_time")
+  baselineInGameTime     DateTime @default(now()) @map("baseline_in_game_time")
+  accelerationMultiplier Float    @default(2.0)   @map("acceleration_multiplier")
+  isPaused               Boolean  @default(false) @map("is_paused")
+  updatedAt              DateTime @updatedAt      @map("updated_at")
+
+  @@map("game_clock_states")
+}
+

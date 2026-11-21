@@ -1,0 +1,162 @@
+/**
+ * X3M Ideas - Central CSS Custom Properties (Design Tokens)
+ * Google Material Design 3 (M3) Semantic Specification
+ */
+
+:root {
+  /* ==========================================================================
+     1. Brand Base Reference Palette (Assets/Brand/brand-guidelines.png)
+     ========================================================================== */
+  --brand-orange-rgb: 245 158 11;      /* #F59E0B - Official Primary */
+  --brand-red-rgb: 225 29 72;          /* #E11D48 - Official Primary */
+  --brand-yellow-rgb: 251 191 36;      /* #FBBF24 - Official Accent */
+  --brand-charcoal-rgb: 31 41 55;      /* #1F2937 - Official Dark Neutral */
+  --brand-light-grey-rgb: 243 244 246; /* #F3F4F6 - Official Light Neutral */
+  --brand-white-rgb: 255 255 255;      /* #FFFFFF - Official Pure White */
+
+  /* Official Brand Signature Gradients */
+  --brand-gradient-primary: linear-gradient(135deg, #F59E0B 0%, #E11D48 100%);
+  --brand-gradient-primary-hover: linear-gradient(135deg, #D97706 0%, #BE123C 100%);
+  --brand-gradient-accent: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+
+  /* ==========================================================================
+     2. M3 System Color Roles (Light Theme - Default)
+     ========================================================================== */
+  /* Primary Role */
+  --md-sys-color-primary: var(--brand-orange-rgb);
+  --md-sys-color-on-primary: 255 255 255;
+  --md-sys-color-primary-container: 254 243 199;   /* #FEF3C7 */
+  --md-sys-color-on-primary-container: 146 64 14;  /* #92400E */
+
+  /* Secondary Role (Charcoal brand tone) */
+  --md-sys-color-secondary: var(--brand-charcoal-rgb);
+  --md-sys-color-on-secondary: 255 255 255;
+  --md-sys-color-secondary-container: var(--brand-light-grey-rgb);
+  --md-sys-color-on-secondary-container: 17 24 39; /* #111827 */
+
+  /* Tertiary Role (Accent Yellow for level/coins/achievements) */
+  --md-sys-color-tertiary: var(--brand-yellow-rgb);
+  --md-sys-color-on-tertiary: 31 41 55;
+  --md-sys-color-tertiary-container: 254 249 195;  /* #FEF9C3 */
+  --md-sys-color-on-tertiary-container: 113 63 18; /* #713F12 */
+
+  /* Surfaces & Containers */
+  --md-sys-color-surface: 255 255 255;
+  --md-sys-color-surface-dim: 243 244 246;
+  --md-sys-color-surface-bright: 255 255 255;
+  --md-sys-color-surface-container-lowest: 255 255 255;
+  --md-sys-color-surface-container-low: 249 250 251;   /* #F9FAFB */
+  --md-sys-color-surface-container: 243 244 246;       /* #F3F4F6 */
+  --md-sys-color-surface-container-high: 229 231 235;  /* #E5E7EB */
+  --md-sys-color-surface-container-highest: 209 213 219;/* #D1D5DB */
+
+  /* Text & Content Roles */
+  --md-sys-color-on-surface: var(--brand-charcoal-rgb); /* Primary text #1F2937 */
+  --md-sys-color-on-surface-variant: 107 114 128;      /* Secondary text #6B7280 */
+  --md-sys-color-on-surface-muted: 156 163 175;        /* Placeholder / Muted text #9CA3AF */
+
+  /* Outlines & Dividers */
+  --md-sys-color-outline: 209 213 219;                 /* #D1D5DB */
+  --md-sys-color-outline-variant: 229 231 235;         /* #E5E7EB */
+
+  /* Status States: Error (Reuses Brand Red) */
+  --md-sys-color-error: var(--brand-red-rgb);
+  --md-sys-color-on-error: 255 255 255;
+  --md-sys-color-error-container: 255 228 230;         /* #FFE4E6 */
+  --md-sys-color-on-error-container: 159 18 57;        /* #9F1239 */
+
+  /* Status States: Success (Provisional green from Brand Guidelines alert) */
+  --md-sys-color-success: 16 185 129;                  /* #10B981 */
+  --md-sys-color-on-success: 255 255 255;
+  --md-sys-color-success-container: 236 253 245;       /* #ECFDF5 */
+  --md-sys-color-on-success-container: 6 95 70;        /* #065F46 */
+
+  /* Status States: Warning (Reuses Brand Orange) */
+  --md-sys-color-warning: var(--brand-orange-rgb);
+  --md-sys-color-on-warning: 255 255 255;
+  --md-sys-color-warning-container: 254 243 199;       /* #FEF3C7 */
+  --md-sys-color-on-warning-container: 146 64 14;      /* #92400E */
+
+  /* Status States: Info (Provisional sky blue) */
+  --md-sys-color-info: 2 132 199;                      /* #0284C7 */
+  --md-sys-color-on-info: 255 255 255;
+  --md-sys-color-info-container: 224 242 254;          /* #E0F2FE */
+  --md-sys-color-on-info-container: 7 89 133;          /* #075985 */
+
+  /* ==========================================================================
+     3. Typography (Montserrat for Display/Headings, Inter for Body/Labels)
+     ========================================================================== */
+  --font-display: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* ==========================================================================
+     4. Shape & Corner Radii (M3 Scale)
+     ========================================================================== */
+  --shape-corner-none: 0px;
+  --shape-corner-xs: 4px;
+  --shape-corner-sm: 8px;
+  --shape-corner-md: 12px;
+  --shape-corner-lg: 16px;
+  --shape-corner-xl: 28px;
+  --shape-corner-full: 9999px;
+
+  /* ==========================================================================
+     5. Elevation & Shadows (M3 Levels 0-5)
+     ========================================================================== */
+  --elevation-0: none;
+  --elevation-1: 0px 1px 3px 1px rgba(0, 0, 0, 0.12), 0px 1px 2px 0px rgba(0, 0, 0, 0.20);
+  --elevation-2: 0px 2px 6px 2px rgba(0, 0, 0, 0.12), 0px 1px 2px 0px rgba(0, 0, 0, 0.20);
+  --elevation-3: 0px 4px 8px 3px rgba(0, 0, 0, 0.12), 0px 1px 3px 0px rgba(0, 0, 0, 0.20);
+  --elevation-4: 0px 6px 10px 4px rgba(0, 0, 0, 0.12), 0px 2px 3px 0px rgba(0, 0, 0, 0.20);
+  --elevation-5: 0px 8px 12px 6px rgba(0, 0, 0, 0.12), 0px 4px 4px 0px rgba(0, 0, 0, 0.20);
+}
+
+/* ==========================================================================
+   M3 Dark Theme Overrides (.theme-dark or [data-theme="dark"])
+   ========================================================================== */
+.theme-dark, [data-theme="dark"] {
+  /* Surfaces */
+  --md-sys-color-surface: 15 23 42;                    /* #0F172A */
+  --md-sys-color-surface-dim: 10 15 29;
+  --md-sys-color-surface-bright: 30 41 59;             /* #1E293B */
+  --md-sys-color-surface-container-lowest: 10 15 29;
+  --md-sys-color-surface-container-low: 15 23 42;
+  --md-sys-color-surface-container: 31 41 55;          /* #1F2937 Charcoal Brand Surface */
+  --md-sys-color-surface-container-high: 51 65 85;     /* #334155 */
+  --md-sys-color-surface-container-highest: 71 85 105; /* #475569 */
+
+  /* Text & Content Roles */
+  --md-sys-color-on-surface: 248 250 252;              /* #F8FAFC Primary Light Text */
+  --md-sys-color-on-surface-variant: 148 163 184;      /* #94A3B8 Secondary Text */
+  --md-sys-color-on-surface-muted: 100 116 139;        /* #64748B */
+
+  /* Outlines & Dividers */
+  --md-sys-color-outline: 51 65 85;                    /* #334155 */
+  --md-sys-color-outline-variant: 30 41 59;            /* #1E293B */
+
+  /* Primary container in dark mode */
+  --md-sys-color-primary-container: 120 53 15;         /* Deep amber */
+  --md-sys-color-on-primary-container: 254 243 199;
+
+  /* Secondary container in dark mode */
+  --md-sys-color-secondary-container: 51 65 85;
+  --md-sys-color-on-secondary-container: 241 245 249;
+
+  /* Tertiary container in dark mode */
+  --md-sys-color-tertiary-container: 113 63 18;
+  --md-sys-color-on-tertiary-container: 254 249 195;
+
+  /* Status Containers in dark mode */
+  --md-sys-color-error-container: 136 19 55;
+  --md-sys-color-on-error-container: 255 228 230;
+
+  --md-sys-color-success-container: 6 78 59;
+  --md-sys-color-on-success-container: 209 250 229;
+
+  --md-sys-color-warning-container: 120 53 15;
+  --md-sys-color-on-warning-container: 254 243 199;
+
+  --md-sys-color-info-container: 12 74 110;
+  --md-sys-color-on-info-container: 224 242 254;
+}
+
