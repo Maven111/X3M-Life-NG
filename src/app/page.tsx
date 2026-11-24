@@ -1,32 +1,41 @@
-'use client';
+import React from 'react';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { PlayerService } from '@/services/player.service';
+import {
+  AgencyLandingLauncher,
+  type LandingSessionInfo
+} from '@/components/landing/AgencyLandingLauncher';
 
-import dynamic from 'next/dynamic';
+export const dynamic = 'force-dynamic';
 
-/**
- * Main Game Viewport & HUD Shell
- * Dynamic import with SSR disabled guarantees WebGL & 3D Canvas
- * mount cleanly without server/client hydration mismatches.
- */
-const GameClientView = dynamic(
-  () => import('@/components/game/GameClientView').then((mod) => mod.GameClientView),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="w-screen h-screen flex flex-col items-center justify-center bg-surface text-surface-foreground">
-        <div className="w-12 h-12 border-4 border-outline border-t-primary rounded-m3-full animate-spin" />
-        <div className="mt-4 font-display font-bold text-base text-white">
-          Initializing X3M Life Simulation...
-        </div>
-      </div>
-    )
+export default async function HomePage() {
+  let session: LandingSessionInfo = {
+    isAuthenticated: false,
+    needsOnboarding: true
+  };
+
+  try {
+    const supabase = createServerSupabaseClient();
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
+
+    if (user) {
+      const player = await PlayerService.getPlayerByAuthId(user.id).catch(() => null);
+      const activeEmployee = player?.employees?.[0] ?? null;
+
+      session = {
+        isAuthenticated: true,
+        email: user.email,
+        displayName: player?.profile?.displayName ?? null,
+        needsOnboarding: !player?.profile || !activeEmployee,
+        roleTitle: activeEmployee?.jobRole?.title ?? null,
+        unitCode: activeEmployee?.organisationUnit?.code ?? null
+      };
+    }
+  } catch {
+    // Public visitor landing page remains resilient even if auth/session check fails
   }
-);
 
-export default function HomePage() {
-  return (
-    <main className="w-screen h-screen overflow-hidden">
-      <GameClientView />
-    </main>
-  );
+  return <AgencyLandingLauncher session={session} />;
 }
-

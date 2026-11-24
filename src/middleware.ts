@@ -60,14 +60,23 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Guard protected game routes if user is not authenticated
-  const protectedPrefixes = ['/dashboard', '/agency', '/office'];
+  // Guard protected game & onboarding routes if user is not authenticated
+  const protectedPrefixes = ['/dashboard', '/onboarding', '/agency', '/office'];
   const isProtectedPath = protectedPrefixes.some((prefix) => request.nextUrl.pathname.startsWith(prefix));
 
   if (isProtectedPath && !user) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = '/login';
     redirectUrl.searchParams.set('redirectedFrom', request.nextUrl.pathname);
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  // Redirect already-authenticated users away from auth pages
+  const authPaths = ['/login', '/register'];
+  const isAuthPath = authPaths.includes(request.nextUrl.pathname);
+  if (isAuthPath && user) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = '/dashboard';
     return NextResponse.redirect(redirectUrl);
   }
 

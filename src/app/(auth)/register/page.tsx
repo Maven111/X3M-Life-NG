@@ -3,60 +3,91 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Card, Button, Alert } from '@/components/ui';
+import { Card, Button, Alert, BrandLogo } from '@/components/ui';
 import { createBrowserSupabaseClient } from '@/lib/supabase/client';
-
-const DEPARTMENTS = [
-  { id: 'creative', name: 'Creative (Art & Copy)', description: 'Campaign concepts, visual craft & storytelling' },
-  { id: 'client_services', name: 'Client Services (Accounts)', description: 'Brand custodianship, briefs & client growth' },
-  { id: 'media', name: 'Media Planning & Buying', description: 'Audience reach, OOH, TV, Radio & digital ads' },
-  { id: 'strategy', name: 'Strategy & Brand Planning', description: 'Consumer insights, research & brand positioning' },
-  { id: 'digital', name: 'Tech & Digital Innovation', description: 'Interactive apps, social campaigns & dev' }
-];
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [department, setDepartment] = useState('creative');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [awaitingEmailConfirm, setAwaitingEmailConfirm] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
+  const handleResendConfirmation = async () => {
+    if (!awaitingEmailConfirm) return;
+    setResending(true);
+    setErrorMsg(null);
+    try {
+      const supabase = createBrowserSupabaseClient();
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: awaitingEmailConfirm,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`
+        }
+      });
+      if (error) {
+        setErrorMsg(error.message);
+        return;
+      }
+      setSuccessMsg('A fresh confirmation email has been sent. Please check your inbox.');
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : 'Unable to resend confirmation email.');
+    } finally {
+      setResending(false);
+    }
+  };
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setErrorMsg(null);
     setSuccessMsg(null);
 
+    if (password !== confirmPassword) {
+      setErrorMsg('Passwords do not match.');
+      return;
+    }
+
+    setLoading(true);
     try {
       const supabase = createBrowserSupabaseClient();
-      const { error } = await supabase.auth.signUp({
-        email,
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
         password,
         options: {
-          data: {
-            full_name: fullName,
-            department
-          }
+          emailRedirectTo: `${window.location.origin}/auth/callback`
         }
       });
 
       if (error) {
-        if (error.message.includes('placeholder') || error.message.includes('fetch failed')) {
-          setSuccessMsg('Local development mode: Registered demo employee account.');
-          setTimeout(() => router.push('/'), 1200);
-          return;
-        }
         setErrorMsg(error.message);
         return;
       }
 
-      setSuccessMsg('Registration successful! Directing to employee onboarding...');
-      setTimeout(() => router.push('/'), 1200);
+      // If Supabase returned an active session immediately, provision the Player row now
+      if (data.session) {
+        const meRes = await fetch('/api/player/me');
+        if (!meRes.ok) {
+          setErrorMsg('Account created, but failed to initialise player record. Please sign in.');
+          return;
+        }
+        setSuccessMsg('Account created! Taking you to character & career onboarding...');
+        router.push('/onboarding');
+        router.refresh();
+        return;
+      }
+
+      // Email confirmation required by Supabase Auth project settings
+      setAwaitingEmailConfirm(email.trim());
+      setSuccessMsg(
+        'Registration successful! Confirm your email address from your inbox, then sign in to complete onboarding.'
+      );
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'An unexpected error occurred';
+      const msg = err instanceof Error ? err.message : 'An unexpected error occurred during registration.';
       setErrorMsg(msg);
     } finally {
       setLoading(false);
@@ -65,25 +96,26 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 bg-background text-foreground relative overflow-hidden">
-      {/* Brand glow circles */}
       <div className="absolute top-1/3 -left-24 w-96 h-96 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/3 -right-24 w-96 h-96 bg-secondary/10 rounded-full blur-3xl pointer-events-none" />
 
-      <Card variant="elevated" elevation="elevation-2" className="w-full max-w-lg relative z-10 border border-outline-variant/60 backdrop-blur-md bg-surface/90 my-8">
-        {/* Header */}
+      <Card
+        variant="elevated"
+        elevation="elevation-2"
+        className="w-full max-w-md relative z-10 border border-outline-variant/60 backdrop-blur-md bg-surface/90 my-8"
+      >
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-brand-gradient-primary text-white text-2xl font-black shadow-elevation-2 mb-3">
-            X3M
+          <div className="flex justify-center mb-4">
+            <BrandLogo size="lg" />
           </div>
           <h1 className="text-2xl font-bold font-heading tracking-tight text-foreground">
-            Join X3M Ideas
+            Create Your X3M Life Account
           </h1>
           <p className="text-sm text-surface-foreground/70 mt-1 font-body">
-            Begin your journey from Intern to Executive Director
+            Step 1 of 2: Register credentials, then build your employee profile
           </p>
         </div>
 
-        {/* Feedback alerts */}
         {errorMsg && (
           <div className="mb-5">
             <Alert variant="error" onClose={() => setErrorMsg(null)}>
@@ -93,38 +125,62 @@ export default function RegisterPage() {
         )}
         {successMsg && (
           <div className="mb-5">
-            <Alert variant="success">
-              {successMsg}
-            </Alert>
+            <Alert variant="success">{successMsg}</Alert>
           </div>
         )}
 
-        {/* Registration Form */}
+        {awaitingEmailConfirm ? (
+          <div className="space-y-4">
+            <div className="p-4 rounded-m3-md bg-surface-container border border-outline/30 text-sm font-body text-surface-foreground/85 space-y-2">
+              <p className="font-semibold text-foreground font-heading">Check your email inbox</p>
+              <p>
+                We sent a confirmation link to{' '}
+                <span className="font-semibold text-foreground">{awaitingEmailConfirm}</span>.
+                Click the link in that email to verify your account and go straight to employee
+                onboarding.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3 pt-1">
+              <Link href="/login" className="block">
+                <Button type="button" className="w-full shadow-elevation-2 py-3">
+                  Go to Sign In
+                </Button>
+              </Link>
+              <Button
+                type="button"
+                variant="tonal"
+                disabled={resending}
+                onClick={handleResendConfirmation}
+                className="w-full"
+              >
+                {resending ? 'Resending Email...' : 'Resend Confirmation Email'}
+              </Button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAwaitingEmailConfirm(null);
+                  setSuccessMsg(null);
+                }}
+                className="text-xs text-surface-foreground/60 hover:text-foreground transition-colors"
+              >
+                Register with a different email address
+              </button>
+            </div>
+          </div>
+        ) : (
         <form onSubmit={handleRegister} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-surface-foreground/80 mb-1.5 font-heading">
-              Full Name
-            </label>
-            <input
-              type="text"
-              required
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder="e.g. Tunde Adebayo"
-              className="w-full px-4 py-2.5 rounded-m3-md bg-surface-container text-foreground border border-outline/40 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm font-body"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-surface-foreground/80 mb-1.5 font-heading">
-              Company Email
+              Email Address
             </label>
             <input
               type="email"
               required
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="name@x3mideas.com"
+              placeholder="you@example.com"
               className="w-full px-4 py-2.5 rounded-m3-md bg-surface-container text-foreground border border-outline/40 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm font-body"
             />
           </div>
@@ -137,6 +193,7 @@ export default function RegisterPage() {
               type="password"
               required
               minLength={6}
+              autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Minimum 6 characters"
@@ -146,49 +203,28 @@ export default function RegisterPage() {
 
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-surface-foreground/80 mb-1.5 font-heading">
-              Career Track / Department
+              Confirm Password
             </label>
-            <div className="space-y-2 mt-2">
-              {DEPARTMENTS.map((dept) => (
-                <label
-                  key={dept.id}
-                  className={`
-                    flex items-start gap-3 p-3 rounded-m3-md border cursor-pointer transition-all
-                    ${department === dept.id
-                      ? 'border-primary bg-primary/5 shadow-elevation-1'
-                      : 'border-outline/30 hover:border-outline bg-surface-container/50'
-                    }
-                  `}
-                >
-                  <input
-                    type="radio"
-                    name="department"
-                    value={dept.id}
-                    checked={department === dept.id}
-                    onChange={(e) => setDepartment(e.target.value)}
-                    className="mt-1 text-primary focus:ring-primary"
-                  />
-                  <div>
-                    <div className="text-sm font-semibold font-heading text-foreground">{dept.name}</div>
-                    <div className="text-xs text-surface-foreground/70 font-body">{dept.description}</div>
-                  </div>
-                </label>
-              ))}
-            </div>
+            <input
+              type="password"
+              required
+              minLength={6}
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Re-enter your password"
+              className="w-full px-4 py-2.5 rounded-m3-md bg-surface-container text-foreground border border-outline/40 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm font-body"
+            />
           </div>
 
-          <div className="pt-3">
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full shadow-elevation-2 py-3"
-            >
-              {loading ? 'Creating Employee Profile...' : 'Complete Registration'}
+          <div className="pt-2">
+            <Button type="submit" disabled={loading} className="w-full shadow-elevation-2 py-3">
+              {loading ? 'Creating Account...' : 'Continue to Onboarding'}
             </Button>
           </div>
         </form>
+        )}
 
-        {/* Footer */}
         <div className="mt-6 pt-5 border-t border-outline-variant/40 text-center">
           <p className="text-sm text-surface-foreground/70 font-body">
             Already have an account?{' '}
@@ -198,7 +234,7 @@ export default function RegisterPage() {
           </p>
           <div className="mt-3">
             <Link href="/" className="text-xs text-surface-foreground/50 hover:text-foreground transition-colors">
-              ← Return to 3D Character Preview
+              ← Back to Agency Home
             </Link>
           </div>
         </div>
@@ -206,4 +242,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-

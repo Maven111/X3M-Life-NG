@@ -1,13 +1,109 @@
-@import './tokens.css';
+@import "tailwindcss";
+@import "./tokens.css";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* ============================================================================
+   Tailwind CSS v4 Theme Integration — X3M Ideas M3 Semantic Design Tokens
+   All values reference central CSS custom properties in ./tokens.css
+   ============================================================================ */
+@theme inline {
+  /* Brand Base Palette */
+  --color-brand-orange: rgb(var(--brand-orange-rgb));
+  --color-brand-red: rgb(var(--brand-red-rgb));
+  --color-brand-yellow: rgb(var(--brand-yellow-rgb));
+  --color-brand-charcoal: rgb(var(--brand-charcoal-rgb));
+  --color-brand-light-grey: rgb(var(--brand-light-grey-rgb));
+  --color-brand-white: rgb(var(--brand-white-rgb));
+
+  /* M3 Primary */
+  --color-primary: rgb(var(--md-sys-color-primary));
+  --color-primary-foreground: rgb(var(--md-sys-color-on-primary));
+  --color-primary-container: rgb(var(--md-sys-color-primary-container));
+  --color-primary-container-foreground: rgb(var(--md-sys-color-on-primary-container));
+
+  /* M3 Secondary */
+  --color-secondary: rgb(var(--md-sys-color-secondary));
+  --color-secondary-foreground: rgb(var(--md-sys-color-on-secondary));
+  --color-secondary-container: rgb(var(--md-sys-color-secondary-container));
+  --color-secondary-container-foreground: rgb(var(--md-sys-color-on-secondary-container));
+
+  /* M3 Tertiary */
+  --color-tertiary: rgb(var(--md-sys-color-tertiary));
+  --color-tertiary-foreground: rgb(var(--md-sys-color-on-tertiary));
+  --color-tertiary-container: rgb(var(--md-sys-color-tertiary-container));
+  --color-tertiary-container-foreground: rgb(var(--md-sys-color-on-tertiary-container));
+
+  /* M3 Surfaces & Page Background */
+  --color-background: rgb(var(--md-sys-color-surface-dim));
+  --color-foreground: rgb(var(--md-sys-color-on-surface));
+  --color-surface: rgb(var(--md-sys-color-surface));
+  --color-surface-dim: rgb(var(--md-sys-color-surface-dim));
+  --color-surface-bright: rgb(var(--md-sys-color-surface-bright));
+  --color-surface-container-lowest: rgb(var(--md-sys-color-surface-container-lowest));
+  --color-surface-container-low: rgb(var(--md-sys-color-surface-container-low));
+  --color-surface-container: rgb(var(--md-sys-color-surface-container));
+  --color-surface-container-high: rgb(var(--md-sys-color-surface-container-high));
+  --color-surface-container-highest: rgb(var(--md-sys-color-surface-container-highest));
+  --color-surface-foreground: rgb(var(--md-sys-color-on-surface));
+  --color-surface-variant-foreground: rgb(var(--md-sys-color-on-surface-variant));
+  --color-surface-muted-foreground: rgb(var(--md-sys-color-on-surface-muted));
+
+  /* M3 Outlines */
+  --color-outline: rgb(var(--md-sys-color-outline));
+  --color-outline-variant: rgb(var(--md-sys-color-outline-variant));
+
+  /* Semantic Status States */
+  --color-error: rgb(var(--md-sys-color-error));
+  --color-error-foreground: rgb(var(--md-sys-color-on-error));
+  --color-error-container: rgb(var(--md-sys-color-error-container));
+  --color-error-container-foreground: rgb(var(--md-sys-color-on-error-container));
+
+  --color-success: rgb(var(--md-sys-color-success));
+  --color-success-foreground: rgb(var(--md-sys-color-on-success));
+  --color-success-container: rgb(var(--md-sys-color-success-container));
+  --color-success-container-foreground: rgb(var(--md-sys-color-on-success-container));
+
+  --color-warning: rgb(var(--md-sys-color-warning));
+  --color-warning-foreground: rgb(var(--md-sys-color-on-warning));
+  --color-warning-container: rgb(var(--md-sys-color-warning-container));
+  --color-warning-container-foreground: rgb(var(--md-sys-color-on-warning-container));
+
+  --color-info: rgb(var(--md-sys-color-info));
+  --color-info-foreground: rgb(var(--md-sys-color-on-info));
+  --color-info-container: rgb(var(--md-sys-color-info-container));
+  --color-info-container-foreground: rgb(var(--md-sys-color-on-info-container));
+
+  /* Typography */
+  --font-display: var(--font-display);
+  --font-heading: var(--font-display);
+  --font-body: var(--font-body);
+
+  /* M3 Shape Radii */
+  --radius-m3-none: var(--shape-corner-none);
+  --radius-m3-xs: var(--shape-corner-xs);
+  --radius-m3-sm: var(--shape-corner-sm);
+  --radius-m3-md: var(--shape-corner-md);
+  --radius-m3-lg: var(--shape-corner-lg);
+  --radius-m3-xl: var(--shape-corner-xl);
+  --radius-m3-full: var(--shape-corner-full);
+
+  /* M3 Elevation Shadows */
+  --shadow-elevation-0: var(--elevation-0);
+  --shadow-elevation-1: var(--elevation-1);
+  --shadow-elevation-2: var(--elevation-2);
+  --shadow-elevation-3: var(--elevation-3);
+  --shadow-elevation-4: var(--elevation-4);
+  --shadow-elevation-5: var(--elevation-5);
+
+  /* Official Brand Signature Gradients */
+  --background-image-brand-gradient-primary: var(--brand-gradient-primary);
+  --background-image-brand-gradient-hover: var(--brand-gradient-primary-hover);
+  --background-image-brand-gradient-accent: var(--brand-gradient-accent);
+}
 
 /* Base Reset using Semantic Design Tokens */
 body {
   font-family: var(--font-body);
-  background-color: rgb(var(--md-sys-color-surface));
+  background-color: rgb(var(--md-sys-color-surface-dim));
   color: rgb(var(--md-sys-color-on-surface));
   margin: 0;
   padding: 0;
@@ -17,5 +113,105 @@ body {
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
+}
+
+/* ============================================================================
+   Living Hero Key-Art Animations (Controlled Blink Loops & Subtle Motion)
+   ============================================================================ */
+@keyframes hero-subtle-breathe {
+  0%, 100% {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+  50% {
+    transform: scale(1.016) translate3d(-4px, -2px, 0);
+  }
+}
+
+/* Natural single + occasional double blink (~160ms blink inside a ~10s loop) */
+@keyframes eye-blink-center {
+  0%, 44%, 46.2%, 88%, 90%, 92.5%, 94.5%, 100% {
+    transform: scaleY(0);
+    opacity: 0;
+  }
+  45.1%, 89%, 93.5% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+@keyframes eye-blink-amber {
+  0%, 26%, 28.4%, 74%, 76.4%, 100% {
+    transform: scaleY(0);
+    opacity: 0;
+  }
+  27.2%, 75.2% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+@keyframes eye-blink-suit {
+  0%, 60%, 62.3%, 100% {
+    transform: scaleY(0);
+    opacity: 0;
+  }
+  61.1% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+@keyframes pendant-glint {
+  0%, 72%, 100% {
+    opacity: 0.25;
+    transform: scale(0.85);
+  }
+  80% {
+    opacity: 0.95;
+    transform: scale(1.15);
+  }
+  88% {
+    opacity: 0.25;
+    transform: scale(0.85);
+  }
+}
+
+.animate-hero-breathe {
+  animation: hero-subtle-breathe 14s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-blink-center {
+  transform-box: fill-box;
+  transform-origin: center top;
+  animation: eye-blink-center 9.6s ease-in-out infinite;
+}
+
+.animate-blink-amber {
+  transform-box: fill-box;
+  transform-origin: center top;
+  animation: eye-blink-amber 11.2s ease-in-out infinite;
+}
+
+.animate-blink-suit {
+  transform-box: fill-box;
+  transform-origin: center top;
+  animation: eye-blink-suit 7.4s ease-in-out infinite;
+}
+
+.animate-pendant-glint {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pendant-glint 5.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-hero-breathe,
+  .animate-blink-center,
+  .animate-blink-amber,
+  .animate-blink-suit,
+  .animate-pendant-glint {
+    animation: none !important;
+  }
 }
 

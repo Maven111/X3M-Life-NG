@@ -1,3 +1,10 @@
+// ==============================================================================
+// DEFERRED TO PHASE 2: Economy Service Draft
+// Preserved from pre-blueprint scaffold. Do not import until Phase 2 models
+// (Wallet, Transaction, MarketplaceItem, InventoryItem) are added to
+// prisma/schema.prisma and migrated.
+// ==============================================================================
+
 import { prisma } from '@/lib/prisma';
 import { TransactionType } from '@prisma/client';
 
@@ -16,39 +23,26 @@ export interface PurchaseItemParams {
 }
 
 export class EconomyService {
-  /**
-   * Process an authoritative wallet transaction within an isolated Prisma database transaction.
-   * Prevents overdrafts and maintains an immutable audit ledger.
-   */
   public static async executeTransaction(params: WalletTransactionParams) {
     const { walletId, amount, type, description, referenceId, idempotencyKey } = params;
 
     return await prisma.$transaction(async (tx) => {
-      // 1. Idempotency check if key provided
       if (idempotencyKey) {
         const existingTx = await tx.transaction.findFirst({
-          where: {
-            walletId,
-            referenceId: idempotencyKey
-          }
+          where: { walletId, referenceId: idempotencyKey }
         });
         if (existingTx) {
-          console.warn(`[EconomyService] Idempotency hit for key ${idempotencyKey}. Returning existing transaction.`);
           return { success: true, transaction: existingTx, idempotencyHit: true };
         }
       }
 
-      // 2. Fetch current wallet state with lock
-      const wallet = await tx.wallet.findUnique({
-        where: { id: walletId }
-      });
+      const wallet = await tx.wallet.findUnique({ where: { id: walletId } });
+      if (!wallet) throw new Error(`Wallet not found: ${walletId}`);
 
-      if (!wallet) {
-        throw new Error(`Wallet not found: ${walletId}`);
-      }
-
-      // 3. Balance verification for negative / debit mutations
-      const isDebit = type === TransactionType.MARKETPLACE_PURCHASE || type === TransactionType.RECURRING_EXPENSE || amount < 0;
+      const isDebit =
+        type === TransactionType.MARKETPLACE_PURCHASE ||
+        type === TransactionType.RECURRING_EXPENSE ||
+        amount < 0;
       const mutationAmount = isDebit ? -Math.abs(amount) : Math.abs(amount);
 
       if (isDebit && wallet.balance < Math.abs(mutationAmount)) {
@@ -58,17 +52,11 @@ export class EconomyService {
       }
 
       const updatedBalance = wallet.balance + mutationAmount;
-
-      // 4. Update wallet balance
       const updatedWallet = await tx.wallet.update({
         where: { id: walletId },
-        data: {
-          balance: updatedBalance,
-          updatedAt: new Date()
-        }
+        data: { balance: updatedBalance, updatedAt: new Date() }
       });
 
-      // 5. Append immutable transaction ledger entry
       const ledgerEntry = await tx.transaction.create({
         data: {
           walletId,
@@ -80,28 +68,16 @@ export class EconomyService {
         }
       });
 
-      return {
-        success: true,
-        transaction: ledgerEntry,
-        newBalance: updatedWallet.balance,
-        idempotencyHit: false
-      };
+      return { success: true, transaction: ledgerEntry, newBalance: updatedWallet.balance, idempotencyHit: false };
     });
   }
 
-  /**
-   * Process monthly or weekly salary disbursement for an employee.
-   */
   public static async disburseSalary(employeeId: string, monthNumber: number) {
     const employee = await prisma.employee.findUnique({
       where: { id: employeeId },
       include: {
-        player: {
-          include: { wallet: true }
-        },
-        jobRole: {
-          include: { salaryBand: true }
-        }
+        player: { include: { wallet: true } },
+        jobRole: { include: { salaryBand: true } }
       }
     });
 
@@ -121,49 +97,23 @@ export class EconomyService {
     });
   }
 
-  /**
-   * Purchase a lifestyle or career item, deducting funds and adding to player's inventory.
-   */
   public static async purchaseLifestyleItem(params: PurchaseItemParams) {
     const { walletId, itemId } = params;
 
     return await prisma.$transaction(async (tx) => {
-      const item = await tx.lifestyleItem.findUnique({
-        where: { id: itemId }
-      });
+      const item = await tx.lifestyleItem.findUnique({ where: { id: itemId } });
+      if (!item) throw new Error(`Lifestyle item not found: ${itemId}`);
 
-      if (!item) {
-        throw new Error(`Lifestyle item not found: ${itemId}`);
-      }
+      const existingInventory = await tx.inventoryItem.findFirst({ where: { walletId, itemId } });
+      if (existingInventory) throw new Error(`Item "${item.name}" is already owned.`);
 
-      // Check if already owned
-      const existingInventory = await tx.inventoryItem.findFirst({
-        where: {
-          walletId,
-          itemId
-        }
-      });
-
-      if (existingInventory) {
-        throw new Error(`Item "${item.name}" is already owned.`);
-      }
-
-      // Check wallet balance
-      const wallet = await tx.wallet.findUnique({
-        where: { id: walletId }
-      });
-
+      const wallet = await tx.wallet.findUnique({ where: { id: walletId } });
       if (!wallet || wallet.balance < item.price) {
         throw new Error(`Insufficient funds to purchase "${item.name}". Price: ₦${item.price.toLocaleString()}`);
       }
 
-      // Debit wallet
-      await tx.wallet.update({
-        where: { id: walletId },
-        data: { balance: wallet.balance - item.price }
-      });
+      await tx.wallet.update({ where: { id: walletId }, data: { balance: wallet.balance - item.price } });
 
-      // Record transaction
       await tx.transaction.create({
         data: {
           walletId,
@@ -175,19 +125,9 @@ export class EconomyService {
         }
       });
 
-      // Add to inventory
-      const inventory = await tx.inventoryItem.create({
-        data: {
-          walletId,
-          itemId: item.id
-        }
-      });
-
-      return {
-        success: true,
-        purchasedItem: item,
-        inventoryRecord: inventory
-      };
+      const inventory = await tx.inventoryItem.create({ data: { walletId, itemId: item.id } });
+      return { success: true, purchasedItem: item, inventoryRecord: inventory };
     });
   }
 }
+
