@@ -4,6 +4,32 @@ import { CareerEventType, EmploymentStatus, OrganisationUnitType } from '@prisma
 export interface AuthUserIdentity {
   id: string;
   email?: string | null;
+  fullName?: string | null;
+  username?: string | null;
+}
+
+const USERNAME_PATTERN = /^[a-z0-9_]{3,30}$/;
+
+export function normalizeUsername(raw?: string | null): string | null {
+  if (!raw) return null;
+  const cleaned = raw.trim().replace(/^@+/, '').toLowerCase();
+  return USERNAME_PATTERN.test(cleaned) ? cleaned : null;
+}
+
+export function extractAuthIdentity(user: {
+  id: string;
+  email?: string | null;
+  user_metadata?: Record<string, unknown> | null;
+}): AuthUserIdentity {
+  const meta = user.user_metadata ?? {};
+  const rawFullName = typeof meta.full_name === 'string' ? meta.full_name.trim() : null;
+  const rawUsername = typeof meta.username === 'string' ? meta.username : null;
+  return {
+    id: user.id,
+    email: user.email ?? null,
+    fullName: rawFullName && rawFullName.length >= 2 ? rawFullName.slice(0, 120) : null,
+    username: normalizeUsername(rawUsername)
+  };
 }
 
 export interface CompleteOnboardingInput {
@@ -12,6 +38,8 @@ export interface CompleteOnboardingInput {
   skinTone: string;
   hairstyle: string;
   outfitKey: string;
+  outfitColor?: string;
+  accessories?: string[];
   careerTrackCode: string;
   organisationUnitCode?: string;
 }
@@ -54,18 +82,84 @@ export class PlayerService {
   }
 
   /**
+   * Check whether a requested username is valid and not yet taken (case-insensitive).
+   */
+  public static async isUsernameAvailable(rawUsername: string): Promise<{
+    available: boolean;
+    normalized: string | null;
+    reason?: string;
+  }> {
+    const normalized = normalizeUsername(rawUsername);
+    if (!normalized) {
+      return {
+        available: false,
+        normalized: null,
+        reason: 'Username must be 3–30 characters using only letters, numbers, and underscores.'
+      };
+    }
+
+    const existing = await prisma.player.findFirst({
+      where: {
+        username: {
+          equals: normalized,
+          mode: 'insensitive'
+        }
+      },
+      select: { id: true }
+    });
+
+    if (existing) {
+      return {
+        available: false,
+        normalized,
+        reason: 'That username is already taken. Please choose another.'
+      };
+    }
+
+    return { available: true, normalized };
+  }
+
+  /**
+   * Server-only helper to resolve a player's email snapshot from a username for login.
+   * Never expose the returned email to unauthenticated clients.
+   */
+  public static async findEmailByUsername(rawUsername: string): Promise<string | null> {
+    const normalized = normalizeUsername(rawUsername);
+    if (!normalized) return null;
+
+    const player = await prisma.player.findFirst({
+      where: {
+        username: {
+          equals: normalized,
+          mode: 'insensitive'
+        }
+      },
+      select: { emailSnapshot: true }
+    });
+
+    return player?.emailSnapshot ?? null;
+  }
+
+  /**
    * Ensure a base `Player` record exists and return the full hydrated player record
    * in a single database round-trip.
    */
   public static async ensureAndGetPlayer(authUser: AuthUserIdentity) {
+    const normalizedUsername = normalizeUsername(authUser.username);
+    const trimmedName = authUser.fullName?.trim() || null;
+
     return await prisma.player.upsert({
       where: { supabaseAuthId: authUser.id },
       update: {
         emailSnapshot: authUser.email ?? undefined,
+        ...(trimmedName ? { fullName: trimmedName } : {}),
+        ...(normalizedUsername ? { username: normalizedUsername } : {}),
         lastSeenAt: new Date()
       },
       create: {
         supabaseAuthId: authUser.id,
+        fullName: trimmedName,
+        username: normalizedUsername,
         emailSnapshot: authUser.email ?? null,
         lastSeenAt: new Date()
       },
@@ -171,14 +265,21 @@ export class PlayerService {
   ) {
     return await prisma.$transaction(async (tx) => {
       // 1. Ensure Player row
+      const normalizedUsername = normalizeUsername(authUser.username);
+      const trimmedName = authUser.fullName?.trim() || null;
+
       const player = await tx.player.upsert({
         where: { supabaseAuthId: authUser.id },
         update: {
           emailSnapshot: authUser.email ?? undefined,
+          ...(trimmedName ? { fullName: trimmedName } : {}),
+          ...(normalizedUsername ? { username: normalizedUsername } : {}),
           lastSeenAt: new Date()
         },
         create: {
           supabaseAuthId: authUser.id,
+          fullName: trimmedName,
+          username: normalizedUsername,
           emailSnapshot: authUser.email ?? null,
           lastSeenAt: new Date()
         },
@@ -237,7 +338,9 @@ export class PlayerService {
               avatarModelKey: 'player-character',
               skinTone: input.skinTone,
               hairstyle: input.hairstyle,
-              outfitKey: input.outfitKey
+              outfitKey: input.outfitKey,
+              outfitColor: input.outfitColor ?? 'x3m_crimson',
+              accessories: input.accessories ?? []
             }
           });
 

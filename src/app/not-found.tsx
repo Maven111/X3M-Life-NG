@@ -11,11 +11,11 @@ export default function NotFound() {
           The page you are looking for does not exist in X3M Life NG.
         </p>
         <div className="flex justify-center gap-3">
-          <Link href="/register">
-            <Button size="sm">Register</Button>
+          <Link href="/auth?mode=register">
+            <Button size="sm">Start Onboarding</Button>
           </Link>
-          <Link href="/login">
-            <Button variant="secondary" size="sm">Sign In</Button>
+          <Link href="/auth?mode=login">
+            <Button variant="secondary" size="sm">Clock In</Button>
           </Link>
         </div>
       </Card>

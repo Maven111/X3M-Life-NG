@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { PlayerService } from '@/services/player.service';
+import { PlayerService, extractAuthIdentity } from '@/services/player.service';
 import {
+  ACCESSORY_VALUES,
   DEFAULT_CHARACTER_APPEARANCE,
   ENTRY_BUSINESS_UNIT_CODES,
   GENDER_VALUES,
   HAIRSTYLE_VALUES,
+  OUTFIT_COLOR_VALUES,
   OUTFIT_VALUES,
   SKIN_TONE_VALUES
 } from '@/config/character-options';
@@ -19,6 +21,8 @@ const OnboardingPayloadSchema = z.object({
   skinTone: z.enum(SKIN_TONE_VALUES).default(DEFAULT_CHARACTER_APPEARANCE.skinTone),
   hairstyle: z.enum(HAIRSTYLE_VALUES).default(DEFAULT_CHARACTER_APPEARANCE.hairstyle),
   outfitKey: z.enum(OUTFIT_VALUES).default(DEFAULT_CHARACTER_APPEARANCE.outfitKey),
+  outfitColor: z.enum(OUTFIT_COLOR_VALUES).default(DEFAULT_CHARACTER_APPEARANCE.outfitColor),
+  accessories: z.array(z.enum(ACCESSORY_VALUES)).max(4).default([]),
   careerTrackCode: z.string().trim().min(2).max(32),
   organisationUnitCode: z
     .enum(ENTRY_BUSINESS_UNIT_CODES)
@@ -46,7 +50,7 @@ export async function POST(request: NextRequest) {
     const validated = OnboardingPayloadSchema.parse(body);
 
     const result = await PlayerService.completeOnboarding(
-      { id: user.id, email: user.email },
+      extractAuthIdentity(user),
       validated
     );
 

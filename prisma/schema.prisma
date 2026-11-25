@@ -70,6 +70,8 @@ enum CareerEventType {
 model Player {
   id             String       @id @default(uuid()) @db.Uuid
   supabaseAuthId String       @unique @map("supabase_auth_id") @db.Uuid
+  fullName       String?      @map("full_name") @db.VarChar(120)
+  username       String?      @unique @map("username") @db.VarChar(40)
   emailSnapshot  String?      @map("email_snapshot") @db.VarChar(255)
   status         PlayerStatus @default(ACTIVE)
   lastSeenAt     DateTime     @default(now()) @map("last_seen_at") @db.Timestamptz
@@ -90,9 +92,11 @@ model PlayerProfile {
   displayName            String    @map("display_name") @db.VarChar(80)
   genderPresentation     String    @default("unspecified") @map("gender_presentation") @db.VarChar(32)
   avatarModelKey         String    @default("player-character") @map("avatar_model_key") @db.VarChar(64)
-  skinTone               String    @default("default") @map("skin_tone") @db.VarChar(32)
-  hairstyle              String    @default("default") @db.VarChar(64)
-  outfitKey              String    @default("business_casual") @map("outfit_key") @db.VarChar(64)
+  skinTone               String    @default("rich_brown") @map("skin_tone") @db.VarChar(32)
+  hairstyle              String    @default("low_fade") @db.VarChar(64)
+  outfitKey              String    @default("smart_casual") @map("outfit_key") @db.VarChar(64)
+  outfitColor            String    @default("x3m_crimson") @map("outfit_color") @db.VarChar(32)
+  accessories            Json      @default("[]") @db.JsonB
   avatarThumbnailUrl     String?   @map("avatar_thumbnail_url")
   absenceProtectionUntil DateTime? @map("absence_protection_until") @db.Timestamptz
   createdAt              DateTime  @default(now()) @map("created_at") @db.Timestamptz

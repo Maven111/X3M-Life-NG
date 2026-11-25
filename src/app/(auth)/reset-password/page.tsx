@@ -168,8 +168,8 @@ export default function ResetPasswordPage() {
         )}
 
         <div className="mt-6 pt-5 border-t border-outline-variant/40 text-center">
-          <Link href="/login" className="text-sm text-primary font-semibold hover:underline">
-            ← Back to Sign In
+          <Link href="/auth?mode=login" className="text-sm text-primary font-semibold hover:underline">
+            ← Back to Clock In
           </Link>
         </div>
       </Card>

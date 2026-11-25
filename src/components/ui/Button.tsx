@@ -45,8 +45,10 @@ export function Button({
     `,
     // M3 Tonal Container
     tonal: `
-      bg-primary-container text-primary-container-foreground hover:bg-primary-container/80
-      font-medium border-0
+      bg-primary-container text-primary-container-foreground
+      border border-primary/25
+      hover:bg-primary hover:text-primary-foreground hover:border-primary hover:shadow-elevation-2
+      active:opacity-90 font-semibold
     `,
     // M3 Text Button
     text: `

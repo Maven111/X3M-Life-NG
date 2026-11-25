@@ -108,7 +108,7 @@ export function AgencyLandingLauncher({ session }: { session: LandingSessionInfo
   };
 
   const primaryHref = !session.isAuthenticated
-    ? '/register'
+    ? '/auth?mode=register'
     : session.needsOnboarding
       ? '/onboarding'
       : '/dashboard';
@@ -184,7 +184,7 @@ export function AgencyLandingLauncher({ session }: { session: LandingSessionInfo
           </div>
         ) : (
           <Link
-            href="/login"
+            href="/auth?mode=login"
             className="inline-flex items-center gap-2 px-5 py-2 rounded-m3-full bg-brand-white/12 hover:bg-brand-white/22 border border-brand-white/25 backdrop-blur-md text-xs sm:text-sm font-display font-semibold text-brand-white transition-all shadow-elevation-1"
           >
             <LogIn className="w-4 h-4" />

@@ -66,17 +66,19 @@ export async function middleware(request: NextRequest) {
 
   if (isProtectedPath && !user) {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = '/login';
+    redirectUrl.pathname = '/auth';
+    redirectUrl.searchParams.set('mode', 'login');
     redirectUrl.searchParams.set('redirectedFrom', request.nextUrl.pathname);
     return NextResponse.redirect(redirectUrl);
   }
 
   // Redirect already-authenticated users away from auth pages
-  const authPaths = ['/login', '/register'];
+  const authPaths = ['/auth', '/login', '/register'];
   const isAuthPath = authPaths.includes(request.nextUrl.pathname);
   if (isAuthPath && user) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = '/dashboard';
+    redirectUrl.search = '';
     return NextResponse.redirect(redirectUrl);
   }
 

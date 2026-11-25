@@ -82,10 +82,10 @@ export default function ForgotPasswordPage() {
                 Use a Different Email
               </Button>
               <Link
-                href="/login"
+                href="/auth?mode=login"
                 className="text-center text-sm text-primary font-semibold hover:underline"
               >
-                Return to Sign In
+                Return to Clock In
               </Link>
             </div>
           </div>
@@ -117,8 +117,8 @@ export default function ForgotPasswordPage() {
         <div className="mt-6 pt-5 border-t border-outline-variant/40 text-center">
           <p className="text-sm text-surface-foreground/70 font-body">
             Remembered your password?{' '}
-            <Link href="/login" className="text-primary font-semibold hover:underline">
-              Sign in
+            <Link href="/auth?mode=login" className="text-primary font-semibold hover:underline">
+              Clock in
             </Link>
           </p>
           <div className="mt-3">

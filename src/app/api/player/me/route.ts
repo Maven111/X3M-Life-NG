@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { PlayerService } from '@/services/player.service';
+import { PlayerService, extractAuthIdentity } from '@/services/player.service';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,7 +25,7 @@ export async function GET() {
       );
     }
 
-    const player = await PlayerService.ensureAndGetPlayer({ id: user.id, email: user.email });
+    const player = await PlayerService.ensureAndGetPlayer(extractAuthIdentity(user));
 
     const activeEmployee = player.employees?.[0] ?? null;
     const needsOnboarding = !player.profile || !activeEmployee;
@@ -40,6 +40,8 @@ export async function GET() {
       player: player
         ? {
             id: player.id,
+            fullName: player.fullName,
+            username: player.username,
             status: player.status,
             profile: player.profile,
             employee: activeEmployee

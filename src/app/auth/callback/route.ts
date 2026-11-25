@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { PlayerService } from '@/services/player.service';
+import { PlayerService, extractAuthIdentity } from '@/services/player.service';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,10 +35,12 @@ export async function GET(request: NextRequest) {
       } = await supabase.auth.getUser();
 
       if (user) {
+        const authIdentity = extractAuthIdentity(user);
+
         if (safeNext) {
           // Non-blocking player sync for recovery/deep-link flows (e.g. /reset-password)
           try {
-            await PlayerService.ensureAndGetPlayer({ id: user.id, email: user.email });
+            await PlayerService.ensureAndGetPlayer(authIdentity);
           } catch (dbErr) {
             console.error('[Auth Callback] Player sync error before next redirect:', dbErr);
           }
@@ -46,7 +48,7 @@ export async function GET(request: NextRequest) {
         }
 
         try {
-          const player = await PlayerService.ensureAndGetPlayer({ id: user.id, email: user.email });
+          const player = await PlayerService.ensureAndGetPlayer(authIdentity);
           const needsOnboarding = !player.profile || !player.employees.length;
           return NextResponse.redirect(`${origin}${needsOnboarding ? '/onboarding' : '/dashboard'}`);
         } catch (dbErr) {
@@ -58,6 +60,6 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.redirect(`${origin}/login?error=auth_callback_failed`);
+  return NextResponse.redirect(`${origin}/auth?mode=login&error=auth_callback_failed`);
 }
 
